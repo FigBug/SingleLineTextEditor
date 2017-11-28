@@ -19,14 +19,13 @@
    To release a closed-source product which uses JUCE, commercial licenses are
    available: visit www.juce.com for more information.
 
-   Modifications by Roland Rabien may be used unde same terms as your juce license
- 
   ==============================================================================
 */
 
-#ifndef CENTREDTEXTEDITOR_H_INCLUDED
-#define CENTREDTEXTEDITOR_H_INCLUDED
+#ifndef SINGLELINETEXTEDITOR_H_INCLUDED
+#define SINGLELINETEXTEDITOR_H_INCLUDED
 
+#include "../JuceLibraryCode/JuceHeader.h"
 
 //==============================================================================
 /**
@@ -37,9 +36,9 @@
 
     @see TextEditor::Listener, Label
 */
-class CentredTextEditor  : public Component,
-                           public TextInputTarget,
-                           public SettableTooltipClient
+class SingleLineTextEditor  : public Component,
+                              public TextInputTarget,
+                              public SettableTooltipClient
 {
 public:
     //==============================================================================
@@ -47,10 +46,10 @@ public:
 
         @param componentName        the name to pass to the component for it to use as its name
     */
-    explicit CentredTextEditor (const String& componentName = String());
+    explicit SingleLineTextEditor (const String& componentName = String());
 
     /** Destructor. */
-    ~CentredTextEditor();
+    ~SingleLineTextEditor();
 
     /** Indicates whether the tab key should be accepted and used to input a tab character,
         or whether it gets ignored.
@@ -209,16 +208,16 @@ public:
         virtual ~Listener()  {}
 
         /** Called when the user changes the text in some way. */
-        virtual void textEditorTextChanged (CentredTextEditor&) {}
+        virtual void textEditorTextChanged (SingleLineTextEditor&) {}
 
         /** Called when the user presses the return key. */
-        virtual void textEditorReturnKeyPressed (CentredTextEditor&) {}
+        virtual void textEditorReturnKeyPressed (SingleLineTextEditor&) {}
 
         /** Called when the user presses the escape key. */
-        virtual void textEditorEscapeKeyPressed (CentredTextEditor&) {}
+        virtual void textEditorEscapeKeyPressed (SingleLineTextEditor&) {}
 
         /** Called when the text editor loses focus. */
-        virtual void textEditorFocusLost (CentredTextEditor&) {}
+        virtual void textEditorFocusLost (SingleLineTextEditor&) {}
     };
 
     //==============================================================================
@@ -226,12 +225,12 @@ public:
     /** Registers a listener to be told when things happen to the text.
         @see removeListener
     */
-    void addListener (CentredTextEditor::Listener* newListener);
+    void addListener (SingleLineTextEditor::Listener* newListener);
 
     /** Deregisters a listener.
         @see addListener
     */
-    void removeListener (CentredTextEditor::Listener* listenerToRemove);
+    void removeListener (SingleLineTextEditor::Listener* listenerToRemove);
 
     //==============================================================================
     /** Returns the entire contents of the editor. */
@@ -429,7 +428,7 @@ public:
             An implementation of this class should should check the input string,
             and return an edited version of it that should be used.
         */
-        virtual String filterNewText (CentredTextEditor&, const String& newInput) = 0;
+        virtual String filterNewText (SingleLineTextEditor&, const String& newInput) = 0;
     };
 
     /** An input filter for a TextEditor that limits the length of text and/or the
@@ -446,7 +445,7 @@ public:
         */
         LengthAndCharacterRestriction (int maxNumChars, const String& allowedCharacters);
 
-        String filterNewText (CentredTextEditor&, const String&) override;
+        String filterNewText (SingleLineTextEditor&, const String&) override;
 
     private:
         String allowedCharacters;
@@ -487,10 +486,10 @@ public:
     {
         virtual ~LookAndFeelMethods() {}
 
-        virtual void fillCentredTextEditorBackground (Graphics&, int width, int height, CentredTextEditor&) = 0;
-        virtual void drawCentredTextEditorOutline (Graphics&, int width, int height, CentredTextEditor&) = 0;
+        virtual void fillSingleLineTextEditorBackground (Graphics&, int width, int height, SingleLineTextEditor&) = 0;
+        virtual void drawSingleLineTextEditorOutline (Graphics&, int width, int height, SingleLineTextEditor&) = 0;
 
-        virtual CaretComponent* createCentredCaretComponent (Component* keyFocusOwner) = 0;
+        virtual CaretComponent* createSingleLineCaretComponent (Component* keyFocusOwner) = 0;
     };
 
     //==============================================================================
@@ -617,7 +616,7 @@ private:
     bool undoOrRedo (bool shouldUndo);
     UndoManager* getUndoManager() noexcept;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CentredTextEditor)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SingleLineTextEditor)
 };
 
-#endif   // CENTREDTEXTEDITOR_H_INCLUDED
+#endif   // SINGLELINETEXTEDITOR_H_INCLUDED

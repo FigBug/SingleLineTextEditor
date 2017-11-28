@@ -19,12 +19,10 @@
    To release a closed-source product which uses JUCE, commercial licenses are
    available: visit www.juce.com for more information.
 
-   Modifications by Roland Rabien may be used unde same terms as your juce license
- 
   ==============================================================================
 */
 
-#include "CentredTextEditor.h"
+#include "SingleLineTextEditor.h"
 
 // a word or space that can't be broken down any further
 struct TextAtom
@@ -53,7 +51,7 @@ struct TextAtom
 
 //==============================================================================
 // a run of text with a single font and colour
-class CentredTextEditor::UniformTextSection
+class SingleLineTextEditor::UniformTextSection
 {
 public:
     UniformTextSection (const String& text, const Font& f, Colour col)
@@ -268,7 +266,7 @@ private:
 };
 
 //==============================================================================
-class CentredTextEditor::Iterator
+class SingleLineTextEditor::Iterator
 {
 public:
     Iterator (const OwnedArray<UniformTextSection>& sectionList,
@@ -696,10 +694,10 @@ private:
 
 
 //==============================================================================
-class CentredTextEditor::InsertAction  : public UndoableAction
+class SingleLineTextEditor::InsertAction  : public UndoableAction
 {
 public:
-    InsertAction (CentredTextEditor& ed,
+    InsertAction (SingleLineTextEditor& ed,
                   const String& newText,
                   const int insertPos,
                   const Font& newFont,
@@ -734,7 +732,7 @@ public:
     }
 
 private:
-    CentredTextEditor& owner;
+    SingleLineTextEditor& owner;
     const String text;
     const int insertIndex, oldCaretPos, newCaretPos;
     const Font font;
@@ -744,10 +742,10 @@ private:
 };
 
 //==============================================================================
-class CentredTextEditor::RemoveAction  : public UndoableAction
+class SingleLineTextEditor::RemoveAction  : public UndoableAction
 {
 public:
-    RemoveAction (CentredTextEditor& ed,
+    RemoveAction (SingleLineTextEditor& ed,
                   const Range<int> rangeToRemove,
                   const int oldCaret,
                   const int newCaret,
@@ -783,7 +781,7 @@ public:
     }
 
 private:
-    CentredTextEditor& owner;
+    SingleLineTextEditor& owner;
     const Range<int> range;
     const int oldCaretPos, newCaretPos;
     OwnedArray<UniformTextSection> removedSections;
@@ -792,12 +790,12 @@ private:
 };
 
 //==============================================================================
-class CentredTextEditor::TextHolderComponent  : public Component,
-                                         public Timer,
-                                         public ValueListener
+class SingleLineTextEditor::TextHolderComponent  : public Component,
+                                                   public Timer,
+                                                   public ValueListener
 {
 public:
-    TextHolderComponent (CentredTextEditor& ed)  : owner (ed)
+    TextHolderComponent (SingleLineTextEditor& ed)  : owner (ed)
     {
         setWantsKeyboardFocus (false);
         setInterceptsMouseClicks (false, true);
@@ -832,7 +830,7 @@ public:
     }
 
 private:
-    CentredTextEditor& owner;
+    SingleLineTextEditor& owner;
 
     JUCE_DECLARE_NON_COPYABLE (TextHolderComponent)
 };
@@ -855,7 +853,7 @@ namespace TextEditorDefs
 }
 
 //==============================================================================
-CentredTextEditor::CentredTextEditor (const String& name)
+SingleLineTextEditor::SingleLineTextEditor (const String& name)
     : Component (name),
       readOnly (false),
       caretVisible (true),
@@ -882,7 +880,7 @@ CentredTextEditor::CentredTextEditor (const String& name)
     recreateCaret();
 }
 
-CentredTextEditor::~CentredTextEditor()
+SingleLineTextEditor::~SingleLineTextEditor()
 {
     if (wasFocused)
         if (ComponentPeer* const peer = getPeer())
@@ -895,13 +893,13 @@ CentredTextEditor::~CentredTextEditor()
 }
 
 //==============================================================================
-void CentredTextEditor::newTransaction()
+void SingleLineTextEditor::newTransaction()
 {
     lastTransactionTime = Time::getApproximateMillisecondCounter();
     undoManager.beginNewTransaction();
 }
 
-bool CentredTextEditor::undoOrRedo (const bool shouldUndo)
+bool SingleLineTextEditor::undoOrRedo (const bool shouldUndo)
 {
     if (! isReadOnly())
     {
@@ -919,42 +917,42 @@ bool CentredTextEditor::undoOrRedo (const bool shouldUndo)
     return false;
 }
 
-bool CentredTextEditor::undo()     { return undoOrRedo (true); }
-bool CentredTextEditor::redo()     { return undoOrRedo (false); }
+bool SingleLineTextEditor::undo()     { return undoOrRedo (true); }
+bool SingleLineTextEditor::redo()     { return undoOrRedo (false); }
 
 //==============================================================================
-bool CentredTextEditor::isReadOnly() const noexcept
+bool SingleLineTextEditor::isReadOnly() const noexcept
 {
     return readOnly || ! isEnabled();
 }
 
-bool CentredTextEditor::isTextInputActive() const
+bool SingleLineTextEditor::isTextInputActive() const
 {
     return ! isReadOnly();
 }
 
-void CentredTextEditor::setTabKeyUsedAsCharacter (const bool shouldTabKeyBeUsed)
+void SingleLineTextEditor::setTabKeyUsedAsCharacter (const bool shouldTabKeyBeUsed)
 {
     tabKeyUsed = shouldTabKeyBeUsed;
 }
 
-void CentredTextEditor::setPopupMenuEnabled (const bool b)
+void SingleLineTextEditor::setPopupMenuEnabled (const bool b)
 {
     popupMenuEnabled = b;
 }
 
-void CentredTextEditor::setSelectAllWhenFocused (const bool b)
+void SingleLineTextEditor::setSelectAllWhenFocused (const bool b)
 {
     selectAllTextWhenFocused = b;
 }
 
 //==============================================================================
-void CentredTextEditor::setFont (const Font& newFont)
+void SingleLineTextEditor::setFont (const Font& newFont)
 {
     currentFont = newFont;
 }
 
-void CentredTextEditor::applyFontToAllText (const Font& newFont)
+void SingleLineTextEditor::applyFontToAllText (const Font& newFont)
 {
     currentFont = newFont;
     const Colour overallColour (findColour (textColourId));
@@ -970,26 +968,26 @@ void CentredTextEditor::applyFontToAllText (const Font& newFont)
     repaint();
 }
 
-void CentredTextEditor::colourChanged()
+void SingleLineTextEditor::colourChanged()
 {
     setOpaque (findColour (backgroundColourId).isOpaque());
     repaint();
 }
 
-void CentredTextEditor::lookAndFeelChanged()
+void SingleLineTextEditor::lookAndFeelChanged()
 {
     caret = nullptr;
     recreateCaret();
     repaint();
 }
 
-void CentredTextEditor::enablementChanged()
+void SingleLineTextEditor::enablementChanged()
 {
     recreateCaret();
     repaint();
 }
 
-void CentredTextEditor::setCaretVisible (const bool shouldCaretBeVisible)
+void SingleLineTextEditor::setCaretVisible (const bool shouldCaretBeVisible)
 {
     if (caretVisible != shouldCaretBeVisible)
     {
@@ -998,7 +996,7 @@ void CentredTextEditor::setCaretVisible (const bool shouldCaretBeVisible)
     }
 }
 
-void CentredTextEditor::recreateCaret()
+void SingleLineTextEditor::recreateCaret()
 {
     if (isCaretVisible())
     {
@@ -1014,17 +1012,17 @@ void CentredTextEditor::recreateCaret()
     }
 }
 
-void CentredTextEditor::updateCaretPosition()
+void SingleLineTextEditor::updateCaretPosition()
 {
     if (caret != nullptr)
         caret->setCaretPosition (getCaretRectangle());
 }
 
-CentredTextEditor::LengthAndCharacterRestriction::LengthAndCharacterRestriction (int maxLen, const String& chars)
+SingleLineTextEditor::LengthAndCharacterRestriction::LengthAndCharacterRestriction (int maxLen, const String& chars)
     : allowedCharacters (chars), maxLength (maxLen)
 {}
 
-String CentredTextEditor::LengthAndCharacterRestriction::filterNewText (CentredTextEditor& ed, const String& newInput)
+String SingleLineTextEditor::LengthAndCharacterRestriction::filterNewText (SingleLineTextEditor& ed, const String& newInput)
 {
     String t (newInput);
 
@@ -1037,30 +1035,30 @@ String CentredTextEditor::LengthAndCharacterRestriction::filterNewText (CentredT
     return t;
 }
 
-void CentredTextEditor::setInputFilter (InputFilter* newFilter, bool takeOwnership)
+void SingleLineTextEditor::setInputFilter (InputFilter* newFilter, bool takeOwnership)
 {
     inputFilter.set (newFilter, takeOwnership);
 }
 
-void CentredTextEditor::setInputRestrictions (const int maxLen, const String& chars)
+void SingleLineTextEditor::setInputRestrictions (const int maxLen, const String& chars)
 {
     setInputFilter (new LengthAndCharacterRestriction (maxLen, chars), true);
 }
 
-void CentredTextEditor::setTextToShowWhenEmpty (const String& text, Colour colourToUse)
+void SingleLineTextEditor::setTextToShowWhenEmpty (const String& text, Colour colourToUse)
 {
     textToShowWhenEmpty = text;
     colourForTextWhenEmpty = colourToUse;
 }
 
 //==============================================================================
-void CentredTextEditor::clear()
+void SingleLineTextEditor::clear()
 {
     clearInternal (nullptr);
     undoManager.clearUndoHistory();
 }
 
-void CentredTextEditor::setText (const String& newText,
+void SingleLineTextEditor::setText (const String& newText,
                           const bool sendTextChangeMessage)
 {
     const int newLength = newText.length();
@@ -1090,7 +1088,7 @@ void CentredTextEditor::setText (const String& newText,
 }
 
 //==============================================================================
-void CentredTextEditor::updateValueFromText()
+void SingleLineTextEditor::updateValueFromText()
 {
     if (valueTextNeedsUpdating)
     {
@@ -1099,20 +1097,20 @@ void CentredTextEditor::updateValueFromText()
     }
 }
 
-Value& CentredTextEditor::getTextValue()
+Value& SingleLineTextEditor::getTextValue()
 {
     updateValueFromText();
     return textValue;
 }
 
-void CentredTextEditor::textWasChangedByValue()
+void SingleLineTextEditor::textWasChangedByValue()
 {
     if (textValue.getValueSource().getReferenceCount() > 1)
         setText (textValue.getValue());
 }
 
 //==============================================================================
-void CentredTextEditor::textChanged()
+void SingleLineTextEditor::textChanged()
 {
     if (listeners.size() > 0)
         postCommandMessage (TextEditorDefs::textChangeMessageId);
@@ -1124,14 +1122,14 @@ void CentredTextEditor::textChanged()
     }
 }
 
-void CentredTextEditor::returnPressed()    { postCommandMessage (TextEditorDefs::returnKeyMessageId); }
-void CentredTextEditor::escapePressed()    { postCommandMessage (TextEditorDefs::escapeKeyMessageId); }
+void SingleLineTextEditor::returnPressed()    { postCommandMessage (TextEditorDefs::returnKeyMessageId); }
+void SingleLineTextEditor::escapePressed()    { postCommandMessage (TextEditorDefs::escapeKeyMessageId); }
 
-void CentredTextEditor::addListener (CentredTextEditor::Listener* const l)      { listeners.add (l); }
-void CentredTextEditor::removeListener (CentredTextEditor::Listener* const l)   { listeners.remove (l); }
+void SingleLineTextEditor::addListener (SingleLineTextEditor::Listener* const l)      { listeners.add (l); }
+void SingleLineTextEditor::removeListener (SingleLineTextEditor::Listener* const l)   { listeners.remove (l); }
 
 //==============================================================================
-void CentredTextEditor::timerCallbackInt()
+void SingleLineTextEditor::timerCallbackInt()
 {
     if (hasKeyboardFocus (false) && ! isCurrentlyBlockedByAnotherModalComponent())
         wasFocused = true;
@@ -1142,7 +1140,7 @@ void CentredTextEditor::timerCallbackInt()
         newTransaction();
 }
 
-void CentredTextEditor::repaintText (const Range<int> range)
+void SingleLineTextEditor::repaintText (const Range<int> range)
 {
     if (! range.isEmpty())
     {
@@ -1175,7 +1173,7 @@ void CentredTextEditor::repaintText (const Range<int> range)
 }
 
 //==============================================================================
-void CentredTextEditor::moveCaret (int newCaretPos)
+void SingleLineTextEditor::moveCaret (int newCaretPos)
 {
     if (newCaretPos < 0)
         newCaretPos = 0;
@@ -1190,22 +1188,22 @@ void CentredTextEditor::moveCaret (int newCaretPos)
     }
 }
 
-int CentredTextEditor::getCaretPosition() const
+int SingleLineTextEditor::getCaretPosition() const
 {
     return caretPosition;
 }
 
-void CentredTextEditor::setCaretPosition (const int newIndex)
+void SingleLineTextEditor::setCaretPosition (const int newIndex)
 {
     moveCaretTo (newIndex, false);
 }
 
-void CentredTextEditor::moveCaretToEnd()
+void SingleLineTextEditor::moveCaretToEnd()
 {
     moveCaretTo (std::numeric_limits<int>::max(), false);
 }
 
-Rectangle<int> CentredTextEditor::getCaretRectangle()
+Rectangle<int> SingleLineTextEditor::getCaretRectangle()
 {
     float cursorX, cursorY;
     float cursorHeight = currentFont.getHeight(); // (in case the text is empty and the call below doesn't set this value)
@@ -1217,15 +1215,15 @@ Rectangle<int> CentredTextEditor::getCaretRectangle()
 //==============================================================================
 enum { rightEdgeSpace = 2 };
 
-float CentredTextEditor::getWordWrapWidth() const
+float SingleLineTextEditor::getWordWrapWidth() const
 {
     return std::numeric_limits<float>::max();
 }
 
-int CentredTextEditor::getTextWidth() const    { return textHolder->getWidth(); }
-int CentredTextEditor::getTextHeight() const   { return textHolder->getHeight(); }
+int SingleLineTextEditor::getTextWidth() const    { return textHolder->getWidth(); }
+int SingleLineTextEditor::getTextHeight() const   { return textHolder->getHeight(); }
 
-void CentredTextEditor::moveCaretTo (const int newPosition, const bool isSelecting)
+void SingleLineTextEditor::moveCaretTo (const int newPosition, const bool isSelecting)
 {
     if (isSelecting)
     {
@@ -1269,12 +1267,12 @@ void CentredTextEditor::moveCaretTo (const int newPosition, const bool isSelecti
     }
 }
 
-int CentredTextEditor::getTextIndexAt (const int x, const int y)
+int SingleLineTextEditor::getTextIndexAt (const int x, const int y)
 {
     return indexAtPosition ((float) x, (float) y);
 }
 
-void CentredTextEditor::insertTextAtCaret (const String& t)
+void SingleLineTextEditor::insertTextAtCaret (const String& t)
 {
     String newText (inputFilter != nullptr ? inputFilter->filterNewText (*this, t) : t);
 
@@ -1292,14 +1290,14 @@ void CentredTextEditor::insertTextAtCaret (const String& t)
     textChanged();
 }
 
-void CentredTextEditor::setHighlightedRegion (const Range<int>& newSelection)
+void SingleLineTextEditor::setHighlightedRegion (const Range<int>& newSelection)
 {
     moveCaretTo (newSelection.getStart(), false);
     moveCaretTo (newSelection.getEnd(), true);
 }
 
 //==============================================================================
-void CentredTextEditor::copy()
+void SingleLineTextEditor::copy()
 {
     const String selectedText (getHighlightedText());
 
@@ -1307,7 +1305,7 @@ void CentredTextEditor::copy()
         SystemClipboard::copyTextToClipboard (selectedText);
 }
 
-void CentredTextEditor::paste()
+void SingleLineTextEditor::paste()
 {
     if (! isReadOnly())
     {
@@ -1318,7 +1316,7 @@ void CentredTextEditor::paste()
     }
 }
 
-void CentredTextEditor::cut()
+void SingleLineTextEditor::cut()
 {
     if (! isReadOnly())
     {
@@ -1328,7 +1326,7 @@ void CentredTextEditor::cut()
 }
 
 //==============================================================================
-void CentredTextEditor::drawContent (Graphics& g)
+void SingleLineTextEditor::drawContent (Graphics& g)
 {
     Rectangle<int> r = getLocalBounds();
 
@@ -1362,13 +1360,13 @@ void CentredTextEditor::drawContent (Graphics& g)
     }
 }
 
-void CentredTextEditor::paint (Graphics& g)
+void SingleLineTextEditor::paint (Graphics& g)
 {
     if (LookAndFeelMethods* lfm = dynamic_cast<LookAndFeelMethods*> (&getLookAndFeel()))
-        lfm->fillCentredTextEditorBackground (g, getWidth(), getHeight(), *this);
+        lfm->fillSingleLineTextEditorBackground (g, getWidth(), getHeight(), *this);
 }
 
-void CentredTextEditor::paintOverChildren (Graphics& g)
+void SingleLineTextEditor::paintOverChildren (Graphics& g)
 {
     if (textToShowWhenEmpty.isNotEmpty()
          && (! hasKeyboardFocus (false))
@@ -1383,16 +1381,16 @@ void CentredTextEditor::paintOverChildren (Graphics& g)
     }
 
     if (LookAndFeelMethods* lfm = dynamic_cast<LookAndFeelMethods*> (&getLookAndFeel()))
-        lfm->drawCentredTextEditorOutline (g, getWidth(), getHeight(), *this);
+        lfm->drawSingleLineTextEditorOutline (g, getWidth(), getHeight(), *this);
 }
 
 //==============================================================================
-void CentredTextEditor::addPopupMenuItems (PopupMenu& m, const MouseEvent*)
+void SingleLineTextEditor::addPopupMenuItems (PopupMenu& m, const MouseEvent*)
 {
     const bool writable = ! isReadOnly();
 
-    m.addItem (StandardApplicationCommandIDs::cut,   TRANS("Cut"), writable);
-    m.addItem (StandardApplicationCommandIDs::copy,  TRANS("Copy"), ! selection.isEmpty());
+    m.addItem (StandardApplicationCommandIDs::cut,       TRANS("Cut"), writable);
+    m.addItem (StandardApplicationCommandIDs::copy,      TRANS("Copy"), ! selection.isEmpty());
     m.addItem (StandardApplicationCommandIDs::paste,     TRANS("Paste"), writable);
     m.addItem (StandardApplicationCommandIDs::del,       TRANS("Delete"), writable);
     m.addSeparator();
@@ -1406,7 +1404,7 @@ void CentredTextEditor::addPopupMenuItems (PopupMenu& m, const MouseEvent*)
     }
 }
 
-void CentredTextEditor::performPopupMenuAction (const int menuItemID)
+void SingleLineTextEditor::performPopupMenuAction (const int menuItemID)
 {
     switch (menuItemID)
     {
@@ -1421,14 +1419,14 @@ void CentredTextEditor::performPopupMenuAction (const int menuItemID)
     }
 }
 
-static void textEditorMenuCallback (int menuResult, CentredTextEditor* editor)
+static void textEditorMenuCallback (int menuResult, SingleLineTextEditor* editor)
 {
     if (editor != nullptr && menuResult != 0)
         editor->performPopupMenuAction (menuResult);
 }
 
 //==============================================================================
-void CentredTextEditor::mouseDown (const MouseEvent& e)
+void SingleLineTextEditor::mouseDown (const MouseEvent& e)
 {
     beginDragAutoRepeat (100);
     newTransaction();
@@ -1452,14 +1450,14 @@ void CentredTextEditor::mouseDown (const MouseEvent& e)
     }
 }
 
-void CentredTextEditor::mouseDrag (const MouseEvent& e)
+void SingleLineTextEditor::mouseDrag (const MouseEvent& e)
 {
     if (wasFocused || ! selectAllTextWhenFocused)
         if (! (popupMenuEnabled && e.mods.isPopupMenu()))
             moveCaretTo (getTextIndexAt (e.x, e.y), true);
 }
 
-void CentredTextEditor::mouseUp (const MouseEvent& e)
+void SingleLineTextEditor::mouseUp (const MouseEvent& e)
 {
     newTransaction();
     textHolder->restartTimer();
@@ -1471,7 +1469,7 @@ void CentredTextEditor::mouseUp (const MouseEvent& e)
     wasFocused = true;
 }
 
-void CentredTextEditor::mouseDoubleClick (const MouseEvent& e)
+void SingleLineTextEditor::mouseDoubleClick (const MouseEvent& e)
 {
     int tokenEnd = getTextIndexAt (e.x, e.y);
     int tokenStart = 0;
@@ -1533,20 +1531,20 @@ void CentredTextEditor::mouseDoubleClick (const MouseEvent& e)
     moveCaretTo (tokenStart, true);
 }
 
-void CentredTextEditor::mouseWheelMove (const MouseEvent& e, const MouseWheelDetails& wheel)
+void SingleLineTextEditor::mouseWheelMove (const MouseEvent& e, const MouseWheelDetails& wheel)
 {
     Component::mouseWheelMove (e, wheel);
 }
 
 //==============================================================================
-bool CentredTextEditor::moveCaretWithTransaction (const int newPos, const bool selecting)
+bool SingleLineTextEditor::moveCaretWithTransaction (const int newPos, const bool selecting)
 {
     newTransaction();
     moveCaretTo (newPos, selecting);
     return true;
 }
 
-bool CentredTextEditor::moveCaretLeft (bool moveInWholeWordSteps, bool selecting)
+bool SingleLineTextEditor::moveCaretLeft (bool moveInWholeWordSteps, bool selecting)
 {
     int pos = getCaretPosition();
 
@@ -1558,7 +1556,7 @@ bool CentredTextEditor::moveCaretLeft (bool moveInWholeWordSteps, bool selecting
     return moveCaretWithTransaction (pos, selecting);
 }
 
-bool CentredTextEditor::moveCaretRight (bool moveInWholeWordSteps, bool selecting)
+bool SingleLineTextEditor::moveCaretRight (bool moveInWholeWordSteps, bool selecting)
 {
     int pos = getCaretPosition();
 
@@ -1570,49 +1568,49 @@ bool CentredTextEditor::moveCaretRight (bool moveInWholeWordSteps, bool selectin
     return moveCaretWithTransaction (pos, selecting);
 }
 
-bool CentredTextEditor::moveCaretUp (bool selecting)
+bool SingleLineTextEditor::moveCaretUp (bool selecting)
 {
     return moveCaretToStartOfLine (selecting);
 }
 
-bool CentredTextEditor::moveCaretDown (bool selecting)
+bool SingleLineTextEditor::moveCaretDown (bool selecting)
 {
     return moveCaretToEndOfLine (selecting);
 }
 
-bool CentredTextEditor::pageUp (bool selecting)
+bool SingleLineTextEditor::pageUp (bool selecting)
 {
     return moveCaretToStartOfLine (selecting);
 }
 
-bool CentredTextEditor::pageDown (bool selecting)
+bool SingleLineTextEditor::pageDown (bool selecting)
 {
     return moveCaretToEndOfLine (selecting);
 }
 
-bool CentredTextEditor::moveCaretToTop (bool selecting)
+bool SingleLineTextEditor::moveCaretToTop (bool selecting)
 {
     return moveCaretWithTransaction (0, selecting);
 }
 
-bool CentredTextEditor::moveCaretToStartOfLine (bool selecting)
+bool SingleLineTextEditor::moveCaretToStartOfLine (bool selecting)
 {
     const Rectangle<float> caretPos (getCaretRectangle().toFloat());
     return moveCaretWithTransaction (indexAtPosition (0.0f, caretPos.getY()), selecting);
 }
 
-bool CentredTextEditor::moveCaretToEnd (bool selecting)
+bool SingleLineTextEditor::moveCaretToEnd (bool selecting)
 {
     return moveCaretWithTransaction (getTotalNumChars(), selecting);
 }
 
-bool CentredTextEditor::moveCaretToEndOfLine (bool selecting)
+bool SingleLineTextEditor::moveCaretToEndOfLine (bool selecting)
 {
     const Rectangle<float> caretPos (getCaretRectangle().toFloat());
     return moveCaretWithTransaction (indexAtPosition ((float) textHolder->getWidth(), caretPos.getY()), selecting);
 }
 
-bool CentredTextEditor::deleteBackwards (bool moveInWholeWordSteps)
+bool SingleLineTextEditor::deleteBackwards (bool moveInWholeWordSteps)
 {
     if (moveInWholeWordSteps)
         moveCaretTo (findWordBreakBefore (getCaretPosition()), true);
@@ -1623,7 +1621,7 @@ bool CentredTextEditor::deleteBackwards (bool moveInWholeWordSteps)
     return true;
 }
 
-bool CentredTextEditor::deleteForwards (bool /*moveInWholeWordSteps*/)
+bool SingleLineTextEditor::deleteForwards (bool /*moveInWholeWordSteps*/)
 {
     if (selection.isEmpty() && selection.getStart() < getTotalNumChars())
         selection = Range<int> (selection.getStart(), selection.getStart() + 1);
@@ -1632,14 +1630,14 @@ bool CentredTextEditor::deleteForwards (bool /*moveInWholeWordSteps*/)
     return true;
 }
 
-bool CentredTextEditor::copyToClipboard()
+bool SingleLineTextEditor::copyToClipboard()
 {
     newTransaction();
     copy();
     return true;
 }
 
-bool CentredTextEditor::cutToClipboard()
+bool SingleLineTextEditor::cutToClipboard()
 {
     newTransaction();
     copy();
@@ -1647,14 +1645,14 @@ bool CentredTextEditor::cutToClipboard()
     return true;
 }
 
-bool CentredTextEditor::pasteFromClipboard()
+bool SingleLineTextEditor::pasteFromClipboard()
 {
     newTransaction();
     paste();
     return true;
 }
 
-bool CentredTextEditor::selectAll()
+bool SingleLineTextEditor::selectAll()
 {
     newTransaction();
     moveCaretTo (0, false);
@@ -1663,17 +1661,17 @@ bool CentredTextEditor::selectAll()
 }
 
 //==============================================================================
-void CentredTextEditor::setEscapeAndReturnKeysConsumed (bool shouldBeConsumed) noexcept
+void SingleLineTextEditor::setEscapeAndReturnKeysConsumed (bool shouldBeConsumed) noexcept
 {
     consumeEscAndReturnKeys = shouldBeConsumed;
 }
 
-bool CentredTextEditor::keyPressed (const KeyPress& key)
+bool SingleLineTextEditor::keyPressed (const KeyPress& key)
 {
     if (isReadOnly() && key != KeyPress ('c', ModifierKeys::commandModifier, 0))
         return false;
 
-    if (! TextEditorKeyMapper<CentredTextEditor>::invokeKeyFunction (*this, key))
+    if (! TextEditorKeyMapper<SingleLineTextEditor>::invokeKeyFunction (*this, key))
     {
         if (key == KeyPress::returnKey)
         {
@@ -1705,7 +1703,7 @@ bool CentredTextEditor::keyPressed (const KeyPress& key)
     return true;
 }
 
-bool CentredTextEditor::keyStateChanged (const bool isKeyDown)
+bool SingleLineTextEditor::keyStateChanged (const bool isKeyDown)
 {
     if (! isKeyDown)
         return false;
@@ -1725,7 +1723,7 @@ bool CentredTextEditor::keyStateChanged (const bool isKeyDown)
 }
 
 //==============================================================================
-void CentredTextEditor::focusGained (FocusChangeType)
+void SingleLineTextEditor::focusGained (FocusChangeType)
 {
     newTransaction();
 
@@ -1743,7 +1741,7 @@ void CentredTextEditor::focusGained (FocusChangeType)
             peer->textInputRequired (peer->globalToLocal (getScreenPosition()), *this);
 }
 
-void CentredTextEditor::focusLost (FocusChangeType)
+void SingleLineTextEditor::focusLost (FocusChangeType)
 {
     newTransaction();
 
@@ -1762,33 +1760,33 @@ void CentredTextEditor::focusLost (FocusChangeType)
 }
 
 //==============================================================================
-void CentredTextEditor::resized()
+void SingleLineTextEditor::resized()
 {
     textHolder->setBounds (getLocalBounds());
     updateCaretPosition();
 }
 
-void CentredTextEditor::handleCommandMessage (const int commandId)
+void SingleLineTextEditor::handleCommandMessage (const int commandId)
 {
     Component::BailOutChecker checker (this);
 
     switch (commandId)
     {
     case TextEditorDefs::textChangeMessageId:
-        listeners.callChecked (checker, &CentredTextEditor::Listener::textEditorTextChanged, (CentredTextEditor&) *this);
+        listeners.callChecked (checker, &SingleLineTextEditor::Listener::textEditorTextChanged, (SingleLineTextEditor&) *this);
         break;
 
     case TextEditorDefs::returnKeyMessageId:
-        listeners.callChecked (checker, &CentredTextEditor::Listener::textEditorReturnKeyPressed, (CentredTextEditor&) *this);
+        listeners.callChecked (checker, &SingleLineTextEditor::Listener::textEditorReturnKeyPressed, (SingleLineTextEditor&) *this);
         break;
 
     case TextEditorDefs::escapeKeyMessageId:
-        listeners.callChecked (checker, &CentredTextEditor::Listener::textEditorEscapeKeyPressed, (CentredTextEditor&) *this);
+        listeners.callChecked (checker, &SingleLineTextEditor::Listener::textEditorEscapeKeyPressed, (SingleLineTextEditor&) *this);
         break;
 
     case TextEditorDefs::focusLossMessageId:
         updateValueFromText();
-        listeners.callChecked (checker, &CentredTextEditor::Listener::textEditorFocusLost, (CentredTextEditor&) *this);
+        listeners.callChecked (checker, &SingleLineTextEditor::Listener::textEditorFocusLost, (SingleLineTextEditor&) *this);
         break;
 
     default:
@@ -1797,24 +1795,24 @@ void CentredTextEditor::handleCommandMessage (const int commandId)
     }
 }
 
-void CentredTextEditor::setTemporaryUnderlining (const Array<Range<int> >& newUnderlinedSections)
+void SingleLineTextEditor::setTemporaryUnderlining (const Array<Range<int> >& newUnderlinedSections)
 {
     underlinedSections = newUnderlinedSections;
     repaint();
 }
 
 //==============================================================================
-UndoManager* CentredTextEditor::getUndoManager() noexcept
+UndoManager* SingleLineTextEditor::getUndoManager() noexcept
 {
     return readOnly ? nullptr : &undoManager;
 }
 
-void CentredTextEditor::clearInternal (UndoManager* const um)
+void SingleLineTextEditor::clearInternal (UndoManager* const um)
 {
     remove (Range<int> (0, getTotalNumChars()), um, caretPosition);
 }
 
-void CentredTextEditor::insert (const String& text,
+void SingleLineTextEditor::insert (const String& text,
                          const int insertIndex,
                          const Font& font,
                          const Colour colour,
@@ -1872,7 +1870,7 @@ void CentredTextEditor::insert (const String& text,
     }
 }
 
-void CentredTextEditor::reinsert (const int insertIndex, const OwnedArray<UniformTextSection>& sectionsToInsert)
+void SingleLineTextEditor::reinsert (const int insertIndex, const OwnedArray<UniformTextSection>& sectionsToInsert)
 {
     int index = 0;
     int nextIndex = 0;
@@ -1912,7 +1910,7 @@ void CentredTextEditor::reinsert (const int insertIndex, const OwnedArray<Unifor
     valueTextNeedsUpdating = true;
 }
 
-void CentredTextEditor::remove (Range<int> range, UndoManager* const um, const int caretPositionToMoveTo)
+void SingleLineTextEditor::remove (Range<int> range, UndoManager* const um, const int caretPositionToMoveTo)
 {
     if (! range.isEmpty())
     {
@@ -2006,7 +2004,7 @@ void CentredTextEditor::remove (Range<int> range, UndoManager* const um, const i
 }
 
 //==============================================================================
-String CentredTextEditor::getText() const
+String SingleLineTextEditor::getText() const
 {
     MemoryOutputStream mo;
     mo.preallocate ((size_t) getTotalNumChars());
@@ -2017,7 +2015,7 @@ String CentredTextEditor::getText() const
     return mo.toUTF8();
 }
 
-String CentredTextEditor::getTextInRange (const Range<int>& range) const
+String SingleLineTextEditor::getTextInRange (const Range<int>& range) const
 {
     if (range.isEmpty())
         return String();
@@ -2046,12 +2044,12 @@ String CentredTextEditor::getTextInRange (const Range<int>& range) const
     return mo.toUTF8();
 }
 
-String CentredTextEditor::getHighlightedText() const
+String SingleLineTextEditor::getHighlightedText() const
 {
     return getTextInRange (selection);
 }
 
-int CentredTextEditor::getTotalNumChars() const
+int SingleLineTextEditor::getTotalNumChars() const
 {
     if (totalNumChars < 0)
     {
@@ -2064,12 +2062,12 @@ int CentredTextEditor::getTotalNumChars() const
     return totalNumChars;
 }
 
-bool CentredTextEditor::isEmpty() const
+bool SingleLineTextEditor::isEmpty() const
 {
     return getTotalNumChars() == 0;
 }
 
-void CentredTextEditor::getCharPosition (const int index, float& cx, float& cy, float& lineHeight) const
+void SingleLineTextEditor::getCharPosition (const int index, float& cx, float& cy, float& lineHeight) const
 {
     Rectangle<int> r = getLocalBounds();
 
@@ -2108,7 +2106,7 @@ void CentredTextEditor::getCharPosition (const int index, float& cx, float& cy, 
     }
 }
 
-int CentredTextEditor::indexAtPosition (const float x, const float)
+int SingleLineTextEditor::indexAtPosition (const float x, const float)
 {
     Rectangle<int> r = getLocalBounds();
 
@@ -2137,7 +2135,7 @@ int CentredTextEditor::indexAtPosition (const float x, const float)
 }
 
 //==============================================================================
-int CentredTextEditor::findWordBreakAfter (const int position) const
+int SingleLineTextEditor::findWordBreakAfter (const int position) const
 {
     const String t (getTextInRange (Range<int> (position, position + 512)));
     const int totalLength = t.length();
@@ -2157,7 +2155,7 @@ int CentredTextEditor::findWordBreakAfter (const int position) const
     return position + i;
 }
 
-int CentredTextEditor::findWordBreakBefore (const int position) const
+int SingleLineTextEditor::findWordBreakBefore (const int position) const
 {
     if (position <= 0)
         return 0;
@@ -2184,7 +2182,7 @@ int CentredTextEditor::findWordBreakBefore (const int position) const
 
 
 //==============================================================================
-void CentredTextEditor::splitSection (const int sectionIndex, const int charToSplitAt)
+void SingleLineTextEditor::splitSection (const int sectionIndex, const int charToSplitAt)
 {
     jassert (sections[sectionIndex] != nullptr);
 
@@ -2192,7 +2190,7 @@ void CentredTextEditor::splitSection (const int sectionIndex, const int charToSp
                      sections.getUnchecked (sectionIndex)->split (charToSplitAt));
 }
 
-void CentredTextEditor::coalesceSimilarSections()
+void SingleLineTextEditor::coalesceSimilarSections()
 {
     for (int i = 0; i < sections.size() - 1; ++i)
     {
